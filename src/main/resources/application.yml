@@ -1,0 +1,39 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: portfolio-solution
+  datasource:
+    # H2 메모리 DB. 서버를 끄면 데이터가 사라지므로 평가할 때마다 같은 상태에서 시작한다.
+    # DB_CLOSE_DELAY=-1은 연결이 모두 닫혀도 DB를 유지하라는 뜻이다. 이것이 없으면
+    # 시작할 때 적재한 상품 데이터가 첫 연결이 닫히는 순간 함께 사라진다.
+    url: jdbc:h2:mem:portfolio;DB_CLOSE_DELAY=-1
+  jpa:
+    hibernate:
+      # 엔티티 정의대로 테이블을 만든다. 메모리 DB라 매번 새로 만들어지고 마이그레이션 파일이 필요 없다.
+      ddl-auto: update
+    # 응답을 만드는 동안 DB 연결을 붙잡고 있지 않도록 끈다.
+    # 대신 지연 로딩된 값을 컨트롤러에서 꺼낼 수 없어, 서비스가 응답 객체로 다 옮겨 담아야 한다.
+    open-in-view: false
+  jackson:
+    deserialization:
+      # 1.5처럼 소수가 들어온 수량을 1로 잘라 받지 않고 400으로 거절한다
+      accept-float-as-int: false
+
+# 가상 시세 서버 연동 설정. prefix가 "price"인 이유는 PriceClientProperties 주석 참고
+# (환경변수 PRICE_BASE_URL과 정확히 대응해야 함)
+price:
+  base-url: http://localhost:9091
+  client-id: client
+  client-secret: client-secret
+  # 외부 호출 제한 시간(밀리초). 응답하지 않는 시세 서버에 갱신이 묶여 다음 주기까지 막히는 것을 끊는다.
+  call-timeout-ms: 3000
+  # 시세 갱신 주기(밀리초). 요구사항이 30초이고, 시나리오는 가격을 바꾼 뒤 45초 안에 반영되는지 확인한다.
+  refresh-interval-ms: 30000
+  # 토큰을 만료 몇 초 전에 미리 새로 받을지. 토큰 수명이 120초라 110초쯤에 갱신된다.
+  token-refresh-margin-seconds: 10
+
+products:
+  # 서버를 실행한 디렉터리 기준 상대 경로다. 다른 위치에서 실행하면 파일을 찾지 못한다.
+  csv-path: data/products.csv
